@@ -1,0 +1,17 @@
+# Normalise line endings for text files so Windows and macOS/Linux
+# teammates don't produce whole-file diffs.
+* text=auto
+
+# Binary files: never touch line endings, never try to diff them.
+*.wav  binary
+*.mp3  binary
+*.m4a  binary
+*.ogg  binary
+*.flac binary
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.heic binary
+*.pkl  binary
+*.joblib binary
+*.zip  binary
