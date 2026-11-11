@@ -22,5 +22,8 @@ desktop.ini
 # Secrets
 .env
 
+# Local task checklist
+/report/completion_checklist.md
+
 # NOTE: data files (.csv, .wav, .jpg, .png) and trained models (.pkl) are
 # deliberately NOT ignored - the assignment requires them in the repo.
