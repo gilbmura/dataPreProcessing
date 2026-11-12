@@ -41,6 +41,22 @@ AUDIO_EXTENSIONS = (".wav", ".flac", ".ogg", ".mp3", ".m4a")
 PHRASES = ("yes_approve", "confirm_transaction")
 DEFAULT_THRESHOLD = 0.6         # used only if the model file has no threshold
 
+
+def calibrate_rejection_threshold(calibration_scores) -> float:
+    """Smallest threshold strictly above every unauthorized calibration score.
+
+    Pass only scores from designated calibration people, never test people.
+    This targets zero observed calibration acceptance, not population security.
+    If a score is 1.0 the returned threshold exceeds 1.0: reject all rather than
+    silently weaken the policy. An empty/invalid calibration set is an error.
+    """
+    scores = np.asarray(calibration_scores, dtype=float)
+    if scores.ndim != 1 or scores.size == 0:
+        raise ValueError('A nonempty one-dimensional calibration score array is required')
+    if not np.isfinite(scores).all() or np.any((scores < 0) | (scores > 1)):
+        raise ValueError('Calibration scores must be finite and within [0, 1]')
+    return float(np.nextafter(scores.max(), np.inf))
+
 PITCH_FMIN, PITCH_FMAX = 60, 400  # covers adult speaking voices
 
 # One row of features per clip. MFCCs describe the shape of the vocal tract,
@@ -230,8 +246,8 @@ def verify_voice(
     """Check whether ``audio_path`` is the voice of ``expected_name``.
 
     Returns ``(approved, confidence)``. ``confidence`` is the model's
-    probability that the clip belongs to ``expected_name``. The clip is
-    approved only if that member is the most likely speaker *and* the
+    classifier score for ``expected_name`` (not a calibrated probability of
+    identity). The clip is approved only if that member is the unique top speaker *and* the
     confidence reaches the threshold chosen in the notebook. An unknown
     name is always denied with confidence 0.0.
     """
@@ -244,7 +260,10 @@ def verify_voice(
     proba = _probabilities(bundle, audio_path)
     confidence = float(proba[classes.index(expected)])
     limit = bundle.get("threshold", DEFAULT_THRESHOLD) if threshold is None else threshold
-    approved = confidence >= limit and confidence >= float(proba.max())
+    if not np.isfinite(limit) or not 0 <= limit <= np.nextafter(1.0, np.inf):
+        raise ValueError('Threshold must be finite and between 0 and the reject-all boundary')
+    unique_top = int(np.count_nonzero(proba == proba.max())) == 1
+    approved = unique_top and confidence >= limit and confidence == float(proba.max())
     return bool(approved), confidence
 
 

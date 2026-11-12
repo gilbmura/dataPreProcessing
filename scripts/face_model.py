@@ -12,7 +12,7 @@ Feature backends
     "facenet"  FaceNet embeddings (512 numbers, facenet-pytorch, pretrained on VGGFace2).
                Needs:  pip install facenet-pytorch   (downloads weights on first use)
     "classic"  HOG shape features + HSV colour histogram (no download, no deep model).
-               Used automatically if facenet-pytorch is not installed.
+               Available for explicit retraining with FACE_BACKEND=classic.
 The backend used for training is stored inside models/face_model.pkl, so
 predict_face always uses the same backend as the model was trained with.
 
@@ -50,12 +50,17 @@ EXPRESSIONS = ["neutral", "smiling", "surprised"]
 IMG_EXT = (".jpg", ".jpeg", ".png")
 DEFAULT_THRESHOLD = 0.60          # used only if no stranger photo is available to tune it
 
+
+class NoFaceDetected(ValueError):
+    """The detector found no face; never classify the full background as a face."""
+
 # ----------------------------------------------------------------------------- images
 def load_rgb(path):
     """Open an image, honour the phone's rotation flag (EXIF) and return RGB."""
     if not os.path.isfile(path):
         raise FileNotFoundError(f"Image not found: {path}")
-    return ImageOps.exif_transpose(Image.open(path)).convert("RGB")
+    with Image.open(path) as image:
+        return ImageOps.exif_transpose(image).convert("RGB")
 
 
 AUGMENTATIONS = {
@@ -96,8 +101,9 @@ def _get_facenet():
         from facenet_pytorch import MTCNN, InceptionResnetV1   # imported lazily (heavy)
         import torch
         torch.manual_seed(SEED)
-        _FACENET["mtcnn"] = MTCNN(image_size=160, margin=20, select_largest=True, device="cpu")
-        _FACENET["net"] = InceptionResnetV1(pretrained="vggface2").eval()
+        detector = MTCNN(image_size=160, margin=20, select_largest=True, device="cpu")
+        network = InceptionResnetV1(pretrained="vggface2").eval()
+        _FACENET.update(mtcnn=detector, net=network)
     return _FACENET
 
 
@@ -106,9 +112,7 @@ def facenet_embedding(img):
     fn = _get_facenet()
     face = fn["mtcnn"](img)                       # detected + cropped + normalised face, or None
     if face is None:
-        warnings.warn("No face detected - using the whole image instead.")
-        arr = np.asarray(img.resize((160, 160)), dtype=np.float32)
-        face = torch.from_numpy((arr - 127.5) / 128.0).permute(2, 0, 1)
+        raise NoFaceDetected('No face detected; provide a clear, single-face image.')
     with torch.no_grad():
         emb = fn["net"](face.unsqueeze(0))[0].numpy()
     return emb / (np.linalg.norm(emb) + 1e-9)     # L2-normalised embedding
@@ -126,7 +130,13 @@ def classic_features(img):
 def default_backend():
     forced = os.environ.get("FACE_BACKEND")
     if forced:
+        if forced not in {'facenet', 'classic'}:
+            raise ValueError('FACE_BACKEND must be facenet or classic')
         return forced
+    # Preserve the backend of an existing trusted project model. Missing packages
+    # must stop execution, not silently replace FaceNet with a different model.
+    if os.path.isfile(MODEL_PATH):
+        return load_bundle()['backend']
     try:
         import facenet_pytorch  # noqa: F401
         return "facenet"
@@ -137,7 +147,12 @@ def default_backend():
 
 
 def extract_features(img, backend):
-    return facenet_embedding(img) if backend == "facenet" else classic_features(img)
+    if backend not in {'facenet', 'classic'}:
+        raise ValueError(f'Unsupported face backend: {backend}')
+    features = facenet_embedding(img) if backend == 'facenet' else classic_features(img)
+    if not np.isfinite(features).all():
+        raise ValueError('Non-finite image features')
+    return features
 
 
 def feature_columns(df):
@@ -210,17 +225,35 @@ def fit_final(df, model_name):
 
 
 def choose_threshold(member_conf, stranger_conf, default=DEFAULT_THRESHOLD, lo=0.50, hi=0.95):
-    """Pick a confidence threshold between the strangers' and the members' confidence."""
+    """Choose a threshold strictly above observed calibration strangers.
+
+    `hi` is retained for API compatibility, but cannot cap the threshold below a
+    stranger score. A score of 1.0 produces an explicit reject-all boundary.
+    Pass calibration samples only; never final-test samples.
+    """
     if stranger_conf is None or len(stranger_conf) == 0:
+        warnings.warn('No calibration strangers: default threshold is uncalibrated.')
         return default
-    member_ref = float(np.percentile(member_conf, 10))      # weak-but-correct member photos
-    s_max = float(np.max(stranger_conf))
+    strangers = np.asarray(stranger_conf, dtype=float)
+    members = np.asarray(member_conf, dtype=float)
+    for values in (strangers, members):
+        if values.ndim != 1 or not np.isfinite(values).all() or np.any((values < 0) | (values > 1)):
+            raise ValueError('Confidence scores must be finite one-dimensional values in [0, 1]')
+    s_max = float(strangers.max())
+    member_ref = float(np.percentile(members, 10)) if len(members) else 0.0
     if s_max < member_ref:
         t = (s_max + member_ref) / 2
     else:
         warnings.warn("The stranger's confidence overlaps the members' - the threshold cannot separate them cleanly.")
-        t = s_max + 0.01
-    return float(np.clip(t, lo, hi))
+        t = np.nextafter(s_max, np.inf)
+    return float(max(lo, t, np.nextafter(s_max, np.inf)))
+
+
+def split_unauthorized_images():
+    """Reserve Placide from calibration. His samples are previously inspected regression data."""
+    paths = list_unauthorized_images()
+    test = [p for p in paths if os.path.basename(p).lower().startswith('placide_')]
+    return [p for p in paths if p not in test], test
 
 
 def save_model(pipeline, backend, threshold, model_name, feature_cols, path=MODEL_PATH):
@@ -248,12 +281,22 @@ def load_bundle(path=MODEL_PATH):
 def predict_face(image_path, threshold=None):
     """Return (name, confidence). name == "unknown" if confidence < threshold."""
     b = load_bundle()
-    x = extract_features(load_rgb(image_path), b["backend"]).reshape(1, -1)
+    try:
+        x = extract_features(load_rgb(image_path), b["backend"]).reshape(1, -1)
+    except NoFaceDetected:
+        return 'unknown', 0.0
+    if x.shape[1] != b['n_features']:
+        raise ValueError('Saved model and image feature dimensions do not match')
     proba = b["pipeline"].predict_proba(x)[0]
+    if not np.isfinite(proba).all():
+        raise ValueError('Non-finite face prediction')
     i = int(np.argmax(proba))
     conf = float(proba[i])
     t = b["threshold"] if threshold is None else threshold
-    return ("unknown" if conf < t else b["classes"][i]), conf
+    if not np.isfinite(t) or not 0 <= t <= np.nextafter(1.0, np.inf):
+        raise ValueError('Invalid face threshold')
+    unique = np.count_nonzero(proba == proba.max()) == 1
+    return ("unknown" if conf < t or not unique else b["classes"][i]), conf
 
 # ----------------------------------------------------------------------------- command line
 def run_training():
@@ -267,20 +310,26 @@ def run_training():
         oof, classes = grouped_cv_proba(X, y, groups, mk)
         results[name] = (score_oof(y, oof, classes), oof)
         print(f"{name:20s}", {k: round(v, 3) for k, v in results[name][0].items()})
-    best = max(results, key=lambda n: results[n][0]["f1_macro"])
+    best = min(results, key=lambda n: (-results[n][0]['f1_macro'], results[n][0]['log_loss']))
     oof, classes = results[best][1], np.array(sorted(set(y)))
     is_orig = (df["augmentation"] == "original").values
     correct = oof.argmax(axis=1) == np.searchsorted(classes, y)
     member_conf = oof.max(axis=1)[is_orig & correct]
     pipe = fit_final(df, best)
     stranger = []
-    for p in list_unauthorized_images():
-        proba = pipe.predict_proba(extract_features(load_rgb(p), backend).reshape(1, -1))[0]
-        stranger.append(float(proba.max()))
+    calibration_files, test_files = split_unauthorized_images()
+    for p in calibration_files:
+        try:
+            proba = pipe.predict_proba(extract_features(load_rgb(p), backend).reshape(1, -1))[0]
+            stranger.append(float(proba.max()))
+        except NoFaceDetected:
+            stranger.append(0.0)
     threshold = choose_threshold(member_conf, stranger)
     save_model(pipe, backend, threshold, best, cols)
     print(f"Best model: {best} | stranger confidence: {stranger} | threshold: {threshold:.3f}")
     print("Saved", MODEL_PATH)
+    for p in test_files:
+        print('Previously inspected regression photo:', os.path.basename(p), predict_face(p))
 
 
 if __name__ == "__main__":
