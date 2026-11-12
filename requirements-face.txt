@@ -1,0 +1,17 @@
+# Full environment, including the FaceNet face model. Install in this order:
+#   pip install -r requirements-face.txt
+#   pip install --no-deps facenet-pytorch==2.6.0
+#
+# Why --no-deps: facenet-pytorch 2.6.0 declares numpy<2 and torch<2.3, which
+# conflict with librosa 1.0 (it needs numpy>=2.1). Its code works with current
+# PyTorch, so skipping those outdated caps keeps one environment for all three models.
+# Verified 12 Nov 2026 with Python 3.13, torch 2.15 (CPU) and numpy 2.5: the
+# recomputed FaceNet features matched Kate's saved ones (cosine similarity >= 0.99999).
+# The pretrained VGGFace2 weights (about 107 MB) download automatically on first use.
+-r requirements.txt
+scikit-learn==1.9.1   # version the saved .pkl models were trained with
+librosa==1.0.0        # version the voice features were computed with
+torch
+torchvision
+requests
+tqdm

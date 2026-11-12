@@ -8,3 +8,7 @@ nbconvert
 ipykernel
 librosa
 soundfile
+Pillow
+joblib
+IPython
+matplotlib-inline
