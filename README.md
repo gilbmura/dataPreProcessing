@@ -15,14 +15,15 @@ team member. A user must pass two checks: their **face** and their **voice**.
                        Show the predicted product
 ```
 
-<!-- TODO (Member 1): confirm this flow matches the assignment brief. -->
+The app computes the recommendation after face approval and displays it only after
+voice approval for the same recognized identity.
 
 ## Team
 
 | Member | Name | Responsibilities | Branch |
 |---|---|---|---|
-| 1 | TODO | Tabular data merge, product recommendation model, README, `requirements.txt`, merging pull requests | TODO |
-| 2 | TODO | Face images, image features, face model, command-line app, unauthorized-user demo | TODO |
+| 1 | Amazing | Tabular data merge, product recommendation model, README, `requirements.txt`, merging pull requests | `member1-tabular-amazing` |
+| 2 | Kate | Face images, image features, face model, command-line app, unauthorized-user demo | `kate-face-model` |
 | 3 | Gilbert | Voice recordings, audio features, voice model (`verify_voice`) | `gilbert` |
 
 ## Repository structure
@@ -62,8 +63,16 @@ python -m venv .venv
 # macOS / Linux
 source .venv/bin/activate
 
-pip install -r requirements.txt
+pip install -r requirements-face.txt
+pip install --no-deps facenet-pytorch==2.6.0
+python scripts/check_environment.py
 ```
+
+`requirements-face.txt` installs everything in `requirements.txt` plus PyTorch, and
+pins the scikit-learn and librosa versions the saved models were built with.
+facenet-pytorch is installed with `--no-deps` because its declared numpy and PyTorch
+limits clash with librosa 1.0; the comments in `requirements-face.txt` explain this.
+The FaceNet weights (about 107 MB) download automatically the first time it runs.
 
 Run the notebooks from the `notebooks/` folder, in order: `01`, `02`, `03`.
 Each one writes its features CSV to `data/` and its model to `models/`.
@@ -86,9 +95,34 @@ Extra takes are welcome and make the voice model more reliable: name them
 room, 1-5 seconds each, and export as `.wav` if you can (`.mp3`/`.m4a` need
 ffmpeg installed).
 
-**Unauthorized user** (`data/unauthorized/`): one face photo and at least one
-voice clip of someone who is not on the team. These are never used for
-training; they test that the system rejects strangers.
+**Unauthorized users** (`data/unauthorized/`): face photos and voice clips of people
+who are not on the team (Frank, Placide, Gabriella and two stranger photos). They are
+never used to train the member classifiers. All eight stranger photos set the face
+threshold. Frank's and Gabriella's voices set the voice threshold; Placide's clips
+are held back to test it.
+
+## Face model
+
+Kate's commit `9fdcbf7` supplies `scripts/face_model.py`, `notebooks/02_image.ipynb`,
+`data/image_features.csv` and `models/face_model.pkl`. The model uses **FaceNet
+embeddings (512 features)** with Logistic Regression. Its API is
+`predict_face(image_path) -> (name, confidence)`, which returns `"unknown"` when the
+confidence is below the threshold or no face is detected.
+
+On 12 November 2026 all three notebooks were re-run end to end in one environment.
+The recomputed FaceNet features match Kate's to a cosine similarity of at least
+0.99999. The re-run included the newer stranger photos (Frank and Placide), so the
+face threshold rose from 0.938 to 0.970: Frank's smiling photo scores 0.942 and
+would have passed the old threshold.
+
+To re-run everything from the project folder:
+
+```bash
+python scripts/run_notebook.py notebooks/01_tabular.ipynb
+python scripts/run_notebook.py notebooks/02_image.ipynb
+python scripts/run_notebook.py notebooks/03_audio.ipynb
+python -m unittest discover -s tests -v
+```
 
 ## Using the voice model
 
@@ -108,17 +142,59 @@ with code 0 (approved), 1 (denied) or 2 (error).
 
 ## Running the demo
 
-<!-- TODO (Member 2): add the command for app.py and an example of its output. -->
+Kate's interactive menu and scenarios are retained:
+
+```bash
+python scripts/app.py
+python scripts/app.py --scenario all --user Gilbert
+python scripts/app.py --scenario a --user Kate
+python scripts/app.py --face data/images/gilbert/gilbert_neutral.jpeg --voice data/audio/gilbert/yes_approve.wav
+python scripts/app.py --face data/images/gilbert/gilbert_neutral.jpeg --voice data/unauthorized/Placide_Yes_approve.wav
+```
+
+Scenario `a` is an authorized transaction, `b` an unauthorized face, and `c` a valid
+face with a wrong voice. The file paths now match the actual recordings. The app
+uses only real model functions: it never approves a voice from its filename.
+Product output remains hidden until voice approval for the face identity. A model
+or dependency error stops execution. Exit codes: 0 approved (or all scenario
+outcomes match), 1 authentication denial/scenario mismatch, 2 setup/runtime error.
+For `--scenario all`, genuine model errors return 2, rather than being counted as
+successful denials. There are no `--json` or `--face-box` flags in this Kate-based app.
+
+In the menu, option `m` asks for your own file paths. A mistyped path reports
+which file is missing and returns to the menu. For the demo video, use the stored
+recordings: the voice model rejects most clips it has not heard before (see Results).
+
+`report/app_demo_results.json` holds results from before Kate's face model and is
+out of date.
 
 ## Results
 
 | Model | Accuracy | F1 (macro) | Log loss |
 |---|---|---|---|
-| Face recognition | TODO | TODO | TODO |
-| Voice verification | TODO | TODO | TODO |
-| Product recommendation | TODO | TODO | TODO |
+| Face recognition (Logistic Regression, grouped CV by photo) | 1.000 | 1.000 | 0.002 |
+| Voice verification (Random Forest, leave-one-recording-out) | 0.944 | 0.943 | 0.573 |
+| Product recommendation (Logistic Regression, grouped test split) | 0.333 | 0.332 | 1.677 |
 
-Each member fills in their row from the summary cell at the end of their notebook.
+These classification scores are not authentication success rates.
+
+- **Face:** the threshold is 0.970, just above the highest stranger score (Frank's
+  smiling photo, 0.942). Every held-out member photo scores at least 0.995. All eight
+  stranger photos set the threshold, so there is no independent stranger test for faces.
+- **Voice:** the threshold is strictly above 0.72 (load the saved value; do not round
+  it down), set from Frank's and Gabriella's clips only. Both of Placide's original
+  clips are rejected, but 1 of his 12 original and augmented clips still passes. Only
+  25.0% of held-out member clips are accepted (75.0% false rejection), so the gate is
+  strict but not yet reliable access control. Full metrics are in
+  `report/audio_results.json` and the notebook.
+- **Product:** only slightly better than the majority-class baseline (accuracy 0.250,
+  log loss 1.593), and its log loss is worse; see `report/member1_sections.md`.
+
+**End-to-end check (12 November 2026).** All three notebooks ran without errors and the
+21 unit tests pass. `--scenario all` passes for Gilbert, Kate and Amazing. All 8
+stranger photos and all 6 stranger voice clips are denied, each member's face with
+another member's voice is denied, and each member's face with their own voice
+(both phrases) is approved with their product shown.
 
 ## Workflow
 
