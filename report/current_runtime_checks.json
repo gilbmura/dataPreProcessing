@@ -1,0 +1,430 @@
+{
+  "scope": "Fresh inference on supplied original files only; includes training/calibration data, not independent accuracy.",
+  "automated_tests": {
+    "passed": 21,
+    "total": 21
+  },
+  "app_scenarios": {
+    "Amazing": "PASS",
+    "Kate": "PASS",
+    "Gilbert": "PASS"
+  },
+  "face_checks": [
+    {
+      "file": "data\\images\\amazing\\amazing_neutral.jpeg",
+      "expected": "Amazing",
+      "actual": "Amazing",
+      "confidence": 0.9995339065603693,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\amazing\\amazing_smiling.png",
+      "expected": "Amazing",
+      "actual": "Amazing",
+      "confidence": 0.999521517149171,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\amazing\\amazing_surprised.jpeg",
+      "expected": "Amazing",
+      "actual": "Amazing",
+      "confidence": 0.9993708825769064,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\gilbert\\gilbert_neutral.jpeg",
+      "expected": "Gilbert",
+      "actual": "Gilbert",
+      "confidence": 0.9996964122311244,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\gilbert\\gilbert_smiling.jpeg",
+      "expected": "Gilbert",
+      "actual": "Gilbert",
+      "confidence": 0.9995142262262097,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\gilbert\\gilbert_surprised.jpeg",
+      "expected": "Gilbert",
+      "actual": "Gilbert",
+      "confidence": 0.9997584471729246,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\kate\\kate_neutral.jpeg",
+      "expected": "Kate",
+      "actual": "Kate",
+      "confidence": 0.999477381227569,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\kate\\kate_smiling.jpeg",
+      "expected": "Kate",
+      "actual": "Kate",
+      "confidence": 0.9992971280239872,
+      "passed": true
+    },
+    {
+      "file": "data\\images\\kate\\kate_surprised.jpeg",
+      "expected": "Kate",
+      "actual": "Kate",
+      "confidence": 0.9994045683859948,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Frank_neutral.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.9214765490917107,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Frank_smiling.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.9423023501880152,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Frank_surprised.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.8984360743286072,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Placide_neutral.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.7230324934804653,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Placide_smiling.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.6716720189677869,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\Placide_surprised.jpeg",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.6117842896606109,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\strangy_facy.png",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.8791878885223848,
+      "passed": true
+    },
+    {
+      "file": "data\\unauthorized\\stray_fac.png",
+      "expected": "unknown",
+      "actual": "unknown",
+      "confidence": 0.5699306593155821,
+      "passed": true
+    }
+  ],
+  "voice_checks": [
+    {
+      "file": "data/audio/amazing/confirm_transaction.wav",
+      "claim": "amazing",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.9833333333333333,
+      "passed": true
+    },
+    {
+      "file": "data/audio/amazing/confirm_transaction.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.0,
+      "passed": true
+    },
+    {
+      "file": "data/audio/amazing/confirm_transaction.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.016666666666666666,
+      "passed": true
+    },
+    {
+      "file": "data/audio/amazing/yes_approve.wav",
+      "claim": "amazing",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.9666666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/audio/amazing/yes_approve.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.0033333333333333335,
+      "passed": true
+    },
+    {
+      "file": "data/audio/amazing/yes_approve.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.03,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/confirm_transaction.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.0,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/confirm_transaction.wav",
+      "claim": "gilbert",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.99,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/confirm_transaction.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.01,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/yes_approve.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.02,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/yes_approve.wav",
+      "claim": "gilbert",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.97,
+      "passed": true
+    },
+    {
+      "file": "data/audio/gilbert/yes_approve.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.01,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/confirm_transaction.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.03333333333333333,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/confirm_transaction.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.0,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/confirm_transaction.wav",
+      "claim": "kate",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.9666666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/yes_approve.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.04,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/yes_approve.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.0033333333333333335,
+      "passed": true
+    },
+    {
+      "file": "data/audio/kate/yes_approve.wav",
+      "claim": "kate",
+      "expected_approval": true,
+      "approved": true,
+      "confidence": 0.9566666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Confirm_transaction.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.5,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Confirm_transaction.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.19666666666666666,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Confirm_transaction.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.30333333333333334,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Yes_approve.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.3566666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Yes_approve.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.10666666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Frank_Yes_approve.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.5366666666666666,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_confirm_01.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.32,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_confirm_01.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.31666666666666665,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_confirm_01.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.36333333333333334,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_yesapprove_01.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.43,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_yesapprove_01.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.2866666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/gabriella_yesapprove_01.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.2833333333333333,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Confirm_transaction.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.2833333333333333,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Confirm_transaction.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.5133333333333333,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Confirm_transaction.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.20333333333333334,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Yes_approve.wav",
+      "claim": "amazing",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.15333333333333332,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Yes_approve.wav",
+      "claim": "gilbert",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.6366666666666667,
+      "passed": true
+    },
+    {
+      "file": "data/unauthorized/Placide_Yes_approve.wav",
+      "claim": "kate",
+      "expected_approval": false,
+      "approved": false,
+      "confidence": 0.21,
+      "passed": true
+    }
+  ],
+  "package_metadata_conflicts": [
+    "numpy",
+    "Pillow",
+    "torch",
+    "torchvision"
+  ],
+  "notebooks": "All saved code cells executed, no recorded errors; not retrained during this check."
+}

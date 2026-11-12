@@ -1,0 +1,21 @@
+{
+  "scope": "Recomputed grouped classifier evaluation from Kate supplied cached embeddings only; image decoding/detection/FaceNet embedding extraction and stranger calibration were not rerun.",
+  "source_commit": "9fdcbf7",
+  "rows": 63,
+  "original_photos": 9,
+  "features": 512,
+  "metrics": {
+    "Logistic Regression": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "log_loss": 0.002000538599909865
+    },
+    "Random Forest": {
+      "accuracy": 1.0,
+      "f1_macro": 1.0,
+      "log_loss": 0.19697599551172798
+    }
+  },
+  "raw_image_inference_tested": false,
+  "model_artifact_retrained": false
+}
