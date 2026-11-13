@@ -80,7 +80,3 @@ FaceNet dependency conflicts, documented in the [setup guide](docs/setup.md).
 - **Kate — Member 2:** image preprocessing, face model and integrated CLI application.
 - **Gilbert — Member 3:** audio preprocessing, voice model and verification.
 
-The final report PDF and contribution sheet are submitted separately, alongside
-the required video and repository links. Verification CSVs in `report/` and PNG
-plots in `report/figures/` are kept in the repository. Report drafts, Word/PDF
-documents, JSON summaries and the personal checklist remain local and are ignored.
