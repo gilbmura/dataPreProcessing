@@ -22,8 +22,12 @@ desktop.ini
 # Secrets
 .env
 
-# Local task checklist
-/report/completion_checklist.md
+# Keep report CSVs and PNG figures; other submission materials stay local.
+/report/*
+!/report/*.csv
+!/report/figures/
+/report/figures/*
+!/report/figures/*.png
 
 # NOTE: data files (.csv, .wav, .jpg, .png) and trained models (.pkl) are
 # deliberately NOT ignored - the assignment requires them in the repo.

@@ -1,203 +1,86 @@
-# Multimodal User Authentication and Product Recommendation
+# Multimodal Authentication and Product Recommendation
 
-A command-line system that only shows a product recommendation to a recognised
-team member. A user must pass two checks: their **face** and their **voice**.
+A data preprocessing coursework project combining face recognition, product
+recommendation and voice verification in one command-line application.
 
+The app recognizes a face, prepares a product recommendation, then verifies that
+the voice belongs to the same person. It reveals the recommendation only when both
+identity checks pass. Failed checks deny access; runtime errors stop the transaction.
+
+**Project scope:** a working educational prototype using saved images, recordings
+and customer data. Its small datasets and model limitations require further
+validation before use beyond the coursework demonstration.
+
+## Quick start
+
+Clone the repository and follow the [environment setup guide](docs/setup.md).
+From the repository root, with the project environment activated:
+
+```bash
+python scripts/check_environment.py
+python scripts/app.py --scenario all --user Gilbert
 ```
- Face image ──► Face model ──► recognised member? ──no──► ACCESS DENIED
-                                     │ yes
-                                     ▼
-                     Product model predicts a product
-                                     │
- Voice clip ──► Voice model ──► same member, confident? ──no──► TRANSACTION DENIED
-                                     │ yes
-                                     ▼
-                       Show the predicted product
+
+Run `python scripts/app.py` for the interactive menu. See the
+[usage guide](docs/usage.md) for individual scenarios, explicit file paths,
+PowerShell examples and exit codes.
+
+## Documentation
+
+- [Setup and troubleshooting](docs/setup.md) — dependencies, pretrained weights and notebooks.
+- [Data conventions](docs/data.md) — recording names, image folders and generated artifacts.
+- [Running the application](docs/usage.md) — inputs, scenarios, recommendations and exit codes.
+- [Evaluation and limitations](docs/evaluation.md) — scores, validation scope and known weaknesses.
+
+## Project structure
+
+```text
+dataPreProcessing/
+├── data/                   # Original inputs, augmented images and feature CSVs
+├── docs/                   # Setup, usage, data and evaluation guides
+├── models/                 # Saved face, product and voice model bundles
+├── notebooks/
+│   ├── 01_tabular.ipynb     # Customer data preparation and product model
+│   ├── 02_image.ipynb       # Image processing and face model
+│   └── 03_audio.ipynb       # Audio processing and voice model
+├── scripts/
+│   ├── app.py              # Integrated command-line application
+│   ├── face_model.py       # Face feature extraction and prediction
+│   ├── product_model.py    # Customer features and recommendation
+│   ├── voice_model.py      # Audio features and speaker verification
+│   ├── check_environment.py
+│   └── run_notebook.py
+├── tests/                  # App control flow and model regression checks
+├── report/                 # Verification CSVs and exported PNGs in figures/
+├── requirements.txt        # Notebook and core model dependencies
+└── requirements-face.txt   # Full environment additions for FaceNet
 ```
 
-The app computes the recommendation after face approval and displays it only after
-voice approval for the same recognized identity.
+## Validation
+
+```bash
+python -m unittest discover -s tests -v
+python scripts/app.py --scenario all --user Amazing
+python scripts/app.py --scenario all --user Kate
+python scripts/app.py --scenario all --user Gilbert
+```
+
+Recorded checks from **12 November 2026** include 21 passing automated tests and
+nine passing application scenarios. These results include training and calibration
+inputs; they are not independent accuracy measurements. See
+[evaluation and limitations](docs/evaluation.md) for the metrics, evidence and
+remaining validation work.
+
+Held-out voice acceptance is only **25%**. The working environment also has declared
+FaceNet dependency conflicts, documented in the [setup guide](docs/setup.md).
 
 ## Team
 
-| Member | Name | Responsibilities | Branch |
-|---|---|---|---|
-| 1 | Amazing | Tabular data merge, product recommendation model, README, `requirements.txt`, merging pull requests | `member1-tabular-amazing` |
-| 2 | Kate | Face images, image features, face model, command-line app, unauthorized-user demo | `kate-face-model` |
-| 3 | Gilbert | Voice recordings, audio features, voice model (`verify_voice`) | `gilbert` |
+- **Amazing — Member 1:** tabular preprocessing, product model, shared setup and documentation, PR integration.
+- **Kate — Member 2:** image preprocessing, face model and integrated CLI application.
+- **Gilbert — Member 3:** audio preprocessing, voice model and verification.
 
-## Repository structure
-
-```
-dataPreProcessing/
-├── data/
-│   ├── raw/                     # original customer CSVs (Member 1)
-│   ├── images/<firstname>/      # neutral.jpg, smiling.jpg, surprised.jpg (Member 2)
-│   ├── audio/<firstname>/       # yes_approve.wav, confirm_transaction.wav (Member 3)
-│   ├── unauthorized/            # face photo and voice clip of a non-member (demo)
-│   ├── merged_dataset.csv       # generated by 01_tabular.ipynb
-│   ├── image_features.csv       # generated by 02_image.ipynb
-│   └── audio_features.csv       # generated by 03_audio.ipynb
-├── notebooks/
-│   ├── 01_tabular.ipynb         # Member 1
-│   ├── 02_image.ipynb           # Member 2
-│   └── 03_audio.ipynb           # Member 3
-├── scripts/
-│   ├── voice_model.py           # verify_voice() + shared audio feature code (Member 3)
-│   ├── face_model.py            # Member 2
-│   ├── product_model.py         # Member 1
-│   └── app.py                   # command-line demo (Member 2)
-├── models/                      # trained .pkl files
-├── report/
-│   └── figures/                 # plots saved by the notebooks
-├── requirements.txt
-└── README.md
-```
-
-## Setup
-
-```bash
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
-
-pip install -r requirements-face.txt
-pip install --no-deps facenet-pytorch==2.6.0
-python scripts/check_environment.py
-```
-
-`requirements-face.txt` installs everything in `requirements.txt` plus PyTorch, and
-pins the scikit-learn and librosa versions the saved models were built with.
-facenet-pytorch is installed with `--no-deps` because its declared numpy and PyTorch
-limits clash with librosa 1.0; the comments in `requirements-face.txt` explain this.
-The FaceNet weights (about 107 MB) download automatically the first time it runs.
-
-Run the notebooks from the `notebooks/` folder, in order: `01`, `02`, `03`.
-Each one writes its features CSV to `data/` and its model to `models/`.
-
-## Data conventions
-
-**Names.** Use each member's first name in lowercase for every folder, for
-example `data/audio/gilbert/` and `data/images/gilbert/`. The apps use the
-folder name as the member's label, so the face and voice folders must match.
-
-**Voice recordings** (`data/audio/<firstname>/`)
-
-| File | Phrase to say |
-|---|---|
-| `yes_approve.wav` | "Yes, approve" |
-| `confirm_transaction.wav` | "Confirm transaction" |
-
-Extra takes are welcome and make the voice model more reliable: name them
-`yes_approve_2.wav`, `confirm_transaction_2.wav`, and so on. Record in a quiet
-room, 1-5 seconds each, and export as `.wav` if you can (`.mp3`/`.m4a` need
-ffmpeg installed).
-
-**Unauthorized users** (`data/unauthorized/`): face photos and voice clips of people
-who are not on the team (Frank, Placide, Gabriella and two stranger photos). They are
-never used to train the member classifiers. All eight stranger photos set the face
-threshold. Frank's and Gabriella's voices set the voice threshold; Placide's clips
-are held back to test it.
-
-## Face model
-
-Kate's commit `9fdcbf7` supplies `scripts/face_model.py`, `notebooks/02_image.ipynb`,
-`data/image_features.csv` and `models/face_model.pkl`. The model uses **FaceNet
-embeddings (512 features)** with Logistic Regression. Its API is
-`predict_face(image_path) -> (name, confidence)`, which returns `"unknown"` when the
-confidence is below the threshold or no face is detected.
-
-On 12 November 2026 all three notebooks were re-run end to end in one environment.
-The recomputed FaceNet features match Kate's to a cosine similarity of at least
-0.99999. The re-run included the newer stranger photos (Frank and Placide), so the
-face threshold rose from 0.938 to 0.970: Frank's smiling photo scores 0.942 and
-would have passed the old threshold.
-
-To re-run everything from the project folder:
-
-```bash
-python scripts/run_notebook.py notebooks/01_tabular.ipynb
-python scripts/run_notebook.py notebooks/02_image.ipynb
-python scripts/run_notebook.py notebooks/03_audio.ipynb
-python -m unittest discover -s tests -v
-```
-
-## Using the voice model
-
-```python
-import sys; sys.path.insert(0, "scripts")
-from voice_model import verify_voice
-
-approved, confidence = verify_voice("path/to/clip.wav", "gilbert")
-```
-
-```bash
-python scripts/voice_model.py path/to/clip.wav gilbert
-```
-
-The terminal command prints APPROVED or DENIED with the confidence, and exits
-with code 0 (approved), 1 (denied) or 2 (error).
-
-## Running the demo
-
-Kate's interactive menu and scenarios are retained:
-
-```bash
-python scripts/app.py
-python scripts/app.py --scenario all --user Gilbert
-python scripts/app.py --scenario a --user Kate
-python scripts/app.py --face data/images/gilbert/gilbert_neutral.jpeg --voice data/audio/gilbert/yes_approve.wav
-python scripts/app.py --face data/images/gilbert/gilbert_neutral.jpeg --voice data/unauthorized/Placide_Yes_approve.wav
-```
-
-Scenario `a` is an authorized transaction, `b` an unauthorized face, and `c` a valid
-face with a wrong voice. The file paths now match the actual recordings. The app
-uses only real model functions: it never approves a voice from its filename.
-Product output remains hidden until voice approval for the face identity. A model
-or dependency error stops execution. Exit codes: 0 approved (or all scenario
-outcomes match), 1 authentication denial/scenario mismatch, 2 setup/runtime error.
-For `--scenario all`, genuine model errors return 2, rather than being counted as
-successful denials. There are no `--json` or `--face-box` flags in this Kate-based app.
-
-In the menu, option `m` asks for your own file paths. A mistyped path reports
-which file is missing and returns to the menu. For the demo video, use the stored
-recordings: the voice model rejects most clips it has not heard before (see Results).
-
-`report/app_demo_results.json` holds results from before Kate's face model and is
-out of date.
-
-## Results
-
-| Model | Accuracy | F1 (macro) | Log loss |
-|---|---|---|---|
-| Face recognition (Logistic Regression, grouped CV by photo) | 1.000 | 1.000 | 0.002 |
-| Voice verification (Random Forest, leave-one-recording-out) | 0.944 | 0.943 | 0.573 |
-| Product recommendation (Logistic Regression, grouped test split) | 0.333 | 0.332 | 1.677 |
-
-These classification scores are not authentication success rates.
-
-- **Face:** the threshold is 0.970, just above the highest stranger score (Frank's
-  smiling photo, 0.942). Every held-out member photo scores at least 0.995. All eight
-  stranger photos set the threshold, so there is no independent stranger test for faces.
-- **Voice:** the threshold is strictly above 0.72 (load the saved value; do not round
-  it down), set from Frank's and Gabriella's clips only. Both of Placide's original
-  clips are rejected, but 1 of his 12 original and augmented clips still passes. Only
-  25.0% of held-out member clips are accepted (75.0% false rejection), so the gate is
-  strict but not yet reliable access control. Full metrics are in
-  `report/audio_results.json` and the notebook.
-- **Product:** only slightly better than the majority-class baseline (accuracy 0.250,
-  log loss 1.593), and its log loss is worse; see `report/member1_sections.md`.
-
-**End-to-end check (12 November 2026).** All three notebooks ran without errors and the
-21 unit tests pass. `--scenario all` passes for Gilbert, Kate and Amazing. All 8
-stranger photos and all 6 stranger voice clips are denied, each member's face with
-another member's voice is denied, and each member's face with their own voice
-(both phrases) is approved with their product shown.
-
-## Workflow
-
-Each member works on their own branch and opens a pull request into `main`.
-Before starting new work, run `git pull origin main` to pick up merged changes.
-Only Member 1 edits this README and `requirements.txt`; send them any changes.
+The final report PDF and contribution sheet are submitted separately, alongside
+the required video and repository links. Verification CSVs in `report/` and PNG
+plots in `report/figures/` are kept in the repository. Report drafts, Word/PDF
+documents, JSON summaries and the personal checklist remain local and are ignored.
